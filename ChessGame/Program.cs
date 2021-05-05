@@ -61,10 +61,22 @@ namespace ChessGame
                 {
                     Desktop[i, j] = new EmptyUnit();
                 }
+            Desktop[6, 6] = new Pawn(0); //black
+            Desktop[5, 7] = new Pawn(1); //white
+            InitDict();
+        }
+
+        void InitDict()
+        {
             Icons.Add("empty", "[ ]");
+            Icons.Add("pawn0", "[♟]");
+            Icons.Add("pawn1", "[♙ ]");
+
         }
         List<Step> History;
         ChessUnit[,] Desktop;
+        // rule: classic name postfix of what color
+        //example : pawn0 - black sides chess
         private Dictionary<string, string> Icons =
             new Dictionary<string, string>();
         void SetAt(Step move)
@@ -74,7 +86,16 @@ namespace ChessGame
 
         public bool Move(Step move)
         {
-            return true;
+            if (Desktop[move.From.x, move.From.y].CanInternalMove(move))
+            {
+                Desktop[move.To.x, move.To.y] = Desktop[move.From.x, move.From.y];
+                Desktop[move.From.x, move.From.y] = new EmptyUnit();
+                //TODO: add move to the journal
+                Console.Clear();
+                return true;
+            }
+            Console.Clear();
+            return false;
         }
 
         public void DrawDesktop()
@@ -96,12 +117,38 @@ namespace ChessGame
     
     class Program
     {
+        static public void GameLoop()
+        {
+            Board tmpBrd = new Board();
+            tmpBrd.DrawDesktop();
+            //test
+            string mv = "";
+            bool WantToPlay = true;
+            while (WantToPlay)
+            {
+                mv = Console.ReadLine();
+                if (mv == "exit")
+                {
+                    WantToPlay = false;
+                    return;
+                }
+                if (mv == "history")
+                {
+                    //print history
+                }
+                else
+                {
+                    tmpBrd.Move(new Step(mv));
+                    tmpBrd.DrawDesktop();
+                }
+                
+            }
+        }
         static void Main(string[] args)
         {
             Console.InputEncoding = System.Text.Encoding.UTF8;
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-            Board tmpBrd = new Board();
-            tmpBrd.DrawDesktop();
+            GameLoop();
         }
     }
 }
