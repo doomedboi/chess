@@ -1,0 +1,2 @@
+cd /d "C:\Users\Avgust\source\repos\ChessGame\ChessGame" &msbuild "ChessGame.csproj" /t:sdvViewer /p:configuration="Debug" /p:platform="Any CPU" /p:SolutionDir="C:\Users\Avgust\source\repos\ChessGame" 
+exit %errorlevel% 
