@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace ChessGame
 {
+    
     //invariant: we create only valid coor
     class Coordinates
     {
@@ -49,10 +50,16 @@ namespace ChessGame
     }
     class Board
     {
+        bool FirstPlayerMakeMoving = true; // white = 1
+
+        void changePlayerMoving()
+        {
+            FirstPlayerMakeMoving = !FirstPlayerMakeMoving;
+        }
         public Board()
         {
             Desktop = new ChessUnit[8, 8];
-            History = new List<Step>();
+            History = new List<Tuple<int, Step>>();
             //initialize coords via units
             //TODO
             //temp movement
@@ -73,7 +80,18 @@ namespace ChessGame
             Icons.Add("pawn1", "[♙ ]");
 
         }
-        List<Step> History;
+
+        public void PrintHistory()
+        {
+            Console.Clear();
+            DrawDesktop();
+            foreach (var elem in History)
+            {
+                Console.WriteLine($"Player {elem.Item1} makes" +
+                    $" move {elem.Item2}"); 
+            }
+        }
+        List<Tuple<int, Step>> History;
         ChessUnit[,] Desktop;
         // rule: classic name postfix of what color
         //example : pawn0 - black sides chess
@@ -90,7 +108,10 @@ namespace ChessGame
             {
                 Desktop[move.To.x, move.To.y] = Desktop[move.From.x, move.From.y];
                 Desktop[move.From.x, move.From.y] = new EmptyUnit();
-                //TODO: add move to the journal
+                //(-2) to maintain the invariant
+                History.Add(new Tuple<int, Step>(Convert.ToInt32
+                    (FirstPlayerMakeMoving) + (-2), move)); 
+                changePlayerMoving();
                 Console.Clear();
                 return true;
             }
@@ -111,6 +132,9 @@ namespace ChessGame
                 Console.Write('\n');
             }
             Console.WriteLine(" a   b   c   d   e   f   g   h");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Player {2 - Convert.ToInt32(FirstPlayerMakeMoving)} must move");
+            Console.ResetColor();
         }
     }
 
@@ -130,24 +154,28 @@ namespace ChessGame
                 if (mv == "exit")
                 {
                     WantToPlay = false;
-                    return;
+                    Console.Clear();
+                    //return; need it?
                 }
                 if (mv == "history")
                 {
                     //print history
+                    tmpBrd.PrintHistory();
+                    
                 }
                 else
                 {
                     tmpBrd.Move(new Step(mv));
                     tmpBrd.DrawDesktop();
                 }
-                
             }
+
         }
         static void Main(string[] args)
         {
             Console.InputEncoding = System.Text.Encoding.UTF8;
             Console.OutputEncoding = System.Text.Encoding.UTF8;
+            Console.WriteLine((int)(1) / 2);
             GameLoop();
         }
     }
