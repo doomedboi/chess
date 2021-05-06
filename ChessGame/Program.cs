@@ -44,6 +44,12 @@ namespace ChessGame
             To = new Coordinates(Convert.ToUInt16(Convert.ToChar(move[3]) - 'a'), 
                 UInt16.Parse(move.Substring(4, 1)) - (uint)1);
         }
+
+        public string GetStep()
+        {
+            return new string($"{(char)(From.x + 'a')}{From.y+1}-" +
+                $"{(char)(To.x +'a')}{To.y+1}");
+        }
         //private constructor against creating without args
         Step() { }
 
@@ -66,10 +72,16 @@ namespace ChessGame
             for (int i = 0; i < 8; i++)
                 for(int j = 0; j < 8; j++)
                 {
-                    Desktop[i, j] = new EmptyUnit();
+                    Desktop[i, j] = new EmptyUnit(2); // NONE?
                 }
-            Desktop[6, 6] = new Pawn(0); //black
-            Desktop[5, 7] = new Pawn(1); //white
+            
+
+            Desktop[1, 0] = new Pawn(1);
+            Desktop[0, 1] = new Pawn(1);
+            Desktop[0, 3] = new Pawn(0);
+            Desktop[1, 1] = new Pawn(1);
+            Desktop[3, 3] = new Queen(0);
+            Desktop[3, 2] = new Pawn(1);
             InitDict();
         }
 
@@ -77,7 +89,9 @@ namespace ChessGame
         {
             Icons.Add("empty", "[ ]");
             Icons.Add("pawn0", "[♟]");
-            Icons.Add("pawn1", "[♙ ]");
+            Icons.Add("pawn1", "[♙ ]"); // бледные - белые
+            Icons.Add("queen0", "[♛ ]");
+            Icons.Add("queen1", "[♕ ]");
 
         }
 
@@ -88,26 +102,108 @@ namespace ChessGame
             foreach (var elem in History)
             {
                 Console.WriteLine($"Player {elem.Item1} makes" +
-                    $" move {elem.Item2}"); 
+                    $" move {elem.Item2.GetStep()}"); 
             }
         }
+
         List<Tuple<int, Step>> History;
         ChessUnit[,] Desktop;
         // rule: classic name postfix of what color
         //example : pawn0 - black sides chess
         private Dictionary<string, string> Icons =
             new Dictionary<string, string>();
-        void SetAt(Step move)
+        
+        bool bDifferentSides(Step move)
         {
-            //TODO
+            return Desktop[move.From.x, move.From.y]._side.color != 
+                Desktop[move.To.x, move.To.y]._side.color;
         }
 
+        //call after Internal check
+        bool CanPawn(Step move)
+        {
+            var name = Desktop[move.From.x, move.From.y].GetName();
+            if (name != "pawn0" && name != "pawn1")
+                return true;
+            //if this move
+            if (Math.Abs((int)(move.To.x - move.From.x)) == Math.Abs(1)
+                && Math.Abs((int)(move.To.y - move.From.y)) == Math.Abs(1))
+                return Desktop[move.To.x, move.To.y]._side.color != ChessUnit.COLOR_OF_CHESS.NONE;
+            
+            return true;
+                
+        }
+
+        bool CanQueen(Step move)
+        {
+            int dx = (int)(move.To.x - move.From.x);
+            int dy = (int)(move.To.y - move.From.y);
+            var from = move.From;
+            int sy = 0;
+            if (dy != 0) sy = dy / Math.Abs(dy);
+            int sx = 0;
+            if (dx != 0) sx = dx / Math.Abs(dx);
+            var to = move.To;
+            if (Math.Abs(dx) == Math.Abs(dy))
+            {
+                for (int x = (int)from.x + sx, y = (int)from.y + sy; x != to.x; x += sx, y += sy)
+                {
+                    if (Desktop[x, y].Empty())
+                        continue;
+                    else
+                        return false;
+                }
+
+            }
+            else if (dy == 0)
+            {
+                for (int i = (int)from.x + sx; i != to.x; i += sx)
+                {
+                    if (Desktop[i, from.y].Empty())
+                        continue;
+
+                    else
+                        return false;
+                }
+
+            }
+            else if (dx == 0)
+            {
+                for (int i = (int)from.y + sy; i != to.y; i += sy)
+                {
+                    if (Desktop[from.x, i].Empty())
+                        continue;
+                    else
+                        return false;
+                }
+
+            }
+            else
+                return false;
+            return true; // is it right??
+        }
         public bool Move(Step move)
         {
             if (Desktop[move.From.x, move.From.y].CanInternalMove(move))
             {
+                if (CanPawn(move) != true)
+                {
+                    Console.Clear(); //rewrite this
+                    return false;
+                }
+                if (bDifferentSides(move) != true ) // жесткий костыль
+                {
+                    Console.Clear(); //rewrite this
+                    return false;
+                } 
+
+                if (CanQueen(move) != true)
+                {
+                    Console.Clear();
+                    return false;
+                }
                 Desktop[move.To.x, move.To.y] = Desktop[move.From.x, move.From.y];
-                Desktop[move.From.x, move.From.y] = new EmptyUnit();
+                Desktop[move.From.x, move.From.y] = new EmptyUnit(3);
                 //(-2) to maintain the invariant
                 History.Add(new Tuple<int, Step>(Convert.ToInt32
                     (FirstPlayerMakeMoving) + (-2), move)); 
@@ -168,14 +264,13 @@ namespace ChessGame
                     tmpBrd.Move(new Step(mv));
                     tmpBrd.DrawDesktop();
                 }
-            }
+            } //TODO: какой игрок сейчас ходит? - вот такие шахматы и можно перемещать...
 
         }
         static void Main(string[] args)
         {
             Console.InputEncoding = System.Text.Encoding.UTF8;
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-            Console.WriteLine((int)(1) / 2);
             GameLoop();
         }
     }
