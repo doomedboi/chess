@@ -30,6 +30,16 @@ namespace ChessGame
     {
         public Coordinates From { get; set; }
         public Coordinates To { get; set; }
+
+        public int GetDx()
+        {
+            return (int)(To.x - From.x);
+        }
+
+        public int GetDy()
+        {
+            return (int)(To.y - From.y);
+        }
         public Step(Coordinates from, Coordinates to)
         {
             From = from;
@@ -74,25 +84,52 @@ namespace ChessGame
                 {
                     Desktop[i, j] = new EmptyUnit(2); // NONE?
                 }
-            
 
-            Desktop[1, 0] = new Pawn(1);
-            Desktop[0, 1] = new Pawn(1);
-            Desktop[0, 3] = new Pawn(0);
-            Desktop[1, 1] = new Pawn(1);
-            Desktop[3, 3] = new Queen(0);
-            Desktop[3, 2] = new Pawn(1);
+
+            LocateStartChess();
             InitDict();
         }
-
+        void LocateStartChess()
+        {
+            //pawns
+            for (int x = 0; x < 8; x++)
+            {
+                Desktop[x, 1] = new Pawn(1);
+                Desktop[x, 6] = new Pawn(0);
+            }
+            Desktop[0, 0] = new Rook(1);
+            Desktop[1, 0] = new Knight(1);
+            Desktop[2, 0] = new Bishop(1);
+            Desktop[3, 0] = new Queen(1);
+            Desktop[4, 0] = new King(1);
+            Desktop[5, 0] = new Bishop(1);
+            Desktop[6, 0] = new Knight(1);
+            Desktop[7, 0] = new Rook(1);
+            Desktop[0, 7] = new Rook(0);
+            Desktop[1, 7] = new Knight(0);
+            Desktop[2, 7] = new Bishop(0);
+            Desktop[3, 7] = new Queen(0);
+            Desktop[4, 7] = new King(0);
+            Desktop[5, 7] = new Bishop(0);
+            Desktop[6, 7] = new Knight(0);
+            Desktop[7, 7] = new Rook(0);
+            
+        }
         void InitDict()
         {
-            Icons.Add("empty", "[ ]");
+            Icons.Add("empty", "[  ]");
             Icons.Add("pawn0", "[♟]");
             Icons.Add("pawn1", "[♙ ]"); // бледные - белые
             Icons.Add("queen0", "[♛ ]");
             Icons.Add("queen1", "[♕ ]");
-
+            Icons.Add("king0", "[♚ ]");
+            Icons.Add("king1", "[♔ ]"); //white king
+            Icons.Add("bishop0", "[♝ ]");
+            Icons.Add("bishop1", "[♗ ]");
+            Icons.Add("knight0", "[♞ ]");
+            Icons.Add("knight1", "[♘ ]");
+            Icons.Add("rook0", "[♜ ]");
+            Icons.Add("rook1", "[♖ ]");
         }
 
         public void PrintHistory()
@@ -134,8 +171,43 @@ namespace ChessGame
                 
         }
 
+        bool CanRook(Step step)
+        {
+            var name = Desktop[step.From.x, step.From.y].GetName();
+            if (name != "rook0" && name != "rook1")
+                return true;
+            int sy = 0;
+            var dy = step.GetDy();
+            if (dy != 0) 
+                sy = dy / Math.Abs(dy);
+            int sx = 0;
+            var dx = step.GetDx();
+            if (dx != 0) 
+                sx = dx / Math.Abs(dx);
+            if (step.GetDx() == 0)
+            {
+                for (int i = (int)step.From.y + sy; i != step.To.y; i += sy)
+                    if (Desktop[step.From.x, i].Empty())
+                        continue;
+                    else
+                        return false;
+            }
+            else if (dy == 0)
+            {
+                for (int z = (int)step.From.x + sx; z != step.To.x; z += sx)
+                    if (Desktop[z, step.From.y].Empty())
+                        continue;
+                    else
+                        return false;
+            }
+            
+            return true;
+        }
         bool CanQueen(Step move)
         {
+            var name = Desktop[move.From.x, move.From.y].GetName();
+            if (name != "queen0" && name != "queen1")
+                return true;
             int dx = (int)(move.To.x - move.From.x);
             int dy = (int)(move.To.y - move.From.y);
             var from = move.From;
@@ -182,26 +254,47 @@ namespace ChessGame
                 return false;
             return true; // is it right??
         }
+
+        bool CanBishop(Step move)
+        {
+            var name = Desktop[move.From.x, move.From.y].GetName();
+            if (name != "bishop0" && name != "bishop1")
+                return true;
+            var dx = move.GetDx();
+            var dy = move.GetDy();
+            int sx = 0;
+            if (dx != 0) sx = dx / Math.Abs(dx);
+            int sy = 0;
+            if (dy != 0) sy = dy / Math.Abs(dy);
+            for (int x = (int)move.From.x + sx, y = (int)move.From.y + sy;
+                x != move.To.x; x += sx, y += sy)
+            {
+                if (Desktop[x, y].Empty())
+                    continue;
+                else
+                    return false;
+            }
+            return true;
+        }
+
+        bool SpecOnesMoves(Step move)
+        {
+            return
+                CanPawn(move) && CanQueen(move) &&
+                CanRook(move) && CanBishop(move);
+        }
         public bool Move(Step move)
         {
             if (Desktop[move.From.x, move.From.y].CanInternalMove(move))
             {
-                if (CanPawn(move) != true)
+                if (bDifferentSides(move) != true ||
+                    SpecOnesMoves(move) != true) // жесткий костыль
                 {
                     Console.Clear(); //rewrite this
                     return false;
                 }
-                if (bDifferentSides(move) != true ) // жесткий костыль
-                {
-                    Console.Clear(); //rewrite this
-                    return false;
-                } 
-
-                if (CanQueen(move) != true)
-                {
-                    Console.Clear();
-                    return false;
-                }
+                
+               
                 Desktop[move.To.x, move.To.y] = Desktop[move.From.x, move.From.y];
                 Desktop[move.From.x, move.From.y] = new EmptyUnit(3);
                 //(-2) to maintain the invariant

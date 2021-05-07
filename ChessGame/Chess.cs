@@ -96,5 +96,68 @@ namespace ChessGame
         }
     }
 
+    class King : ChessUnit
+    {
+        public override bool CanInternalMove(Step step)
+        {
+            if (Math.Abs(step.To.x - step.From.x) < 2 &&
+                Math.Abs(step.To.y - step.From.y) < 2)
+                return true;
+            else
+                return false;
+        }
+
+        public King(int side)
+        {
+            _side = new Side(side);
+            name = "king" + side;
+        }
+    }
+
+    class Bishop : ChessUnit
+    {
+        public override bool CanInternalMove(Step step)
+        {
+            var dx = step.GetDx();
+            var dy = step.GetDy();
+            return Math.Abs(dx) == Math.Abs(dy);   
+        }
+
+        public Bishop(int side)
+        {
+            _side = new Side(side);
+            name = "bishop" + side;
+        }
+    }
+
+    class Knight : ChessUnit
+    {
+        public override bool CanInternalMove(Step step)
+        {
+            var dx = step.GetDx();
+            var dy = step.GetDy();
+            return Math.Pow((int)(step.From.x) - step.To.x, 2)
+                + Math.Pow((int)(step.From.y) - step.To.y, 2) == 5;
+        }
+
+        public Knight(int side)
+        {
+            _side = new Side(side);
+            name = "knight" + side;
+        }
+    }
+
+    class Rook : ChessUnit
+    {
+        public override bool CanInternalMove(Step step)
+        {
+            return step.GetDx() * step.GetDy() == 0;
+        }
+        public Rook(int side)
+        {
+            _side = new Side(side);
+            name = "rook" + side;
+        }
+    }
 
 }
